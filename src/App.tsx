@@ -15,8 +15,12 @@ import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
+import SetPassword from './pages/SetPassword';
 import UserManagement from './pages/UserManagement';
+import Clients from './pages/Clients';
+import ClientDetail from './pages/ClientDetail';
+import Documents from './pages/Documents';
+import Reports from './pages/Reports';
 
 function App() {
   return (
@@ -26,7 +30,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:resettoken" element={<ResetPassword />} />
+          <Route path="/set-password" element={<SetPassword />} />
 
           {/* Protected Routes wrapped in Layout */}
           <Route element={<ProtectedRoute />}>
@@ -60,6 +64,16 @@ function App() {
               <Route element={<ProtectedRoute requiredPermission="Users" />}>
                 <Route path="/users" element={<UserManagement />} />
               </Route>
+
+              {/* Clients */}
+              <Route path="/clients" element={<Clients />} />
+              <Route path="/clients/:id" element={<ClientDetail />} />
+
+              {/* Documents */}
+              <Route path="/documents" element={<Documents />} />
+
+              {/* Reports */}
+              <Route path="/reports" element={<Reports />} />
             </Route>
           </Route>
         </Routes>

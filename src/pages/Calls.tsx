@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, Calendar, Clock, Plus, Search, Filter } from 'lucide-react';
+import { Phone, Calendar, Clock, Plus, Search, Filter, X } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
@@ -16,6 +16,10 @@ const Calls = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [logForm, setLogForm] = useState({ notes: '', status: '' });
 
   const fetchContactedLeads = async () => {
     try {
@@ -43,6 +47,41 @@ const Calls = () => {
       case 'NOT PICKED UP': return 'text-red-600 bg-red-50 border-red-200';
       case 'CONTACTED': return 'text-blue-600 bg-blue-50 border-blue-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const openLogModal = (lead: Lead) => {
+    setSelectedLead(lead);
+    setLogForm({ notes: '', status: lead.status });
+    setIsLogModalOpen(true);
+  };
+
+  const handleLogSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+    
+    try {
+      if (logForm.notes) {
+        await api.post('/follow-ups', {
+          leadId: selectedLead._id,
+          date: new Date().toISOString().split('T')[0],
+          time: new Date().toTimeString().slice(0, 5),
+          type: 'Call',
+          priority: 'Medium',
+          notes: logForm.notes,
+          status: 'Completed'
+        });
+      }
+
+      if (logForm.status !== selectedLead.status) {
+        await api.put(`/leads/${selectedLead._id}`, { status: logForm.status });
+      }
+
+      toast.success('Call log saved');
+      setIsLogModalOpen(false);
+      fetchContactedLeads();
+    } catch (err: any) {
+      toast.error('Failed to save log');
     }
   };
 
@@ -143,7 +182,7 @@ const Calls = () => {
                       {lead.lastContacted ? new Date(lead.lastContacted).toLocaleString() : 'N/A'}
                     </td>
                     <td className="px-6 py-4">
-                      <button className="text-primary hover:underline font-medium">Log Call / Note</button>
+                      <button onClick={() => openLogModal(lead)} className="text-primary hover:underline font-medium">Log Call / Note</button>
                     </td>
                   </tr>
                 ))
@@ -152,6 +191,53 @@ const Calls = () => {
           </table>
         </div>
       </div>
+
+      {isLogModalOpen && selectedLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Log Call - {selectedLead.fullName}</h3>
+              <button onClick={() => setIsLogModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleLogSubmit} className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  value={logForm.status}
+                  onChange={e => setLogForm({ ...logForm, status: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary"
+                >
+                  <option value="NEW">New</option>
+                  <option value="CONTACTED">Contacted</option>
+                  <option value="RECEIVED / CONNECTED">Received / Connected</option>
+                  <option value="NOT PICKED UP">Not Picked Up</option>
+                  <option value="QUALIFIED">Qualified</option>
+                  <option value="PROPOSAL">Proposal</option>
+                  <option value="NEGOTIATION">Negotiation</option>
+                  <option value="WON">Won</option>
+                  <option value="LOST">Lost</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Call Notes</label>
+                <textarea
+                  value={logForm.notes}
+                  onChange={e => setLogForm({ ...logForm, notes: e.target.value })}
+                  rows={4}
+                  className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary"
+                  placeholder="What was discussed?"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <button type="button" onClick={() => setIsLogModalOpen(false)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90">Save Log</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

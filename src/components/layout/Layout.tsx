@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, PhoneCall, Mail, CheckSquare, MessageSquare, Shield, LogOut, Upload, UserPlus, CalendarClock, Ban, CheckCircle, BarChart } from 'lucide-react';
+import { LayoutDashboard, Users, PhoneCall, Mail, CheckSquare, MessageSquare, Shield, LogOut, Upload, UserPlus, CalendarClock, Ban, CheckCircle, BarChart, Building2, FileText } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
 
@@ -58,19 +58,33 @@ const Layout = () => {
             </div>
           )}
 
-          <div className="space-y-1">
-            <div className="px-3 text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Customers</div>
-            <Link to="/leads?status=WON" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
-              <CheckCircle className="w-5 h-5 mr-3 text-green-600" /> Won / Customers
-            </Link>
-            <Link to="/leads?status=LOST" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
-              <Ban className="w-5 h-5 mr-3 text-red-600" /> Lost Leads
-            </Link>
-          </div>
+          {hasPermission('Customers') && (
+            <div className="space-y-1">
+              <div className="px-3 text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Customers</div>
+              <Link to="/clients" className={`flex items-center px-3 py-2 rounded-md transition-colors ${location.pathname.startsWith('/clients') ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
+                <Building2 className="w-5 h-5 mr-3 text-emerald-600" /> All Clients
+              </Link>
+              <Link to="/leads?status=WON" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+                <CheckCircle className="w-5 h-5 mr-3 text-green-600" /> Won Leads
+              </Link>
+              <Link to="/leads?status=LOST" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+                <Ban className="w-5 h-5 mr-3 text-red-600" /> Lost Leads
+              </Link>
+            </div>
+          )}
+
+          {hasPermission('Documents') && (
+            <div className="space-y-1">
+              <div className="px-3 text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Documents</div>
+              <Link to="/documents" className={`flex items-center px-3 py-2 rounded-md transition-colors ${isActive('/documents') ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
+                <FileText className="w-5 h-5 mr-3 text-violet-600" /> Templates & Docs
+              </Link>
+            </div>
+          )}
           
           <div className="space-y-1">
             <div className="px-3 text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Administration</div>
-            <Link to="/" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors">
+            <Link to="/reports" className={`flex items-center px-3 py-2 rounded-md transition-colors ${isActive('/reports') ? 'bg-primary/10 text-primary' : 'text-gray-700 hover:bg-gray-50'}`}>
               <BarChart className="w-5 h-5 mr-3" /> Reports & Analytics
             </Link>
             {hasPermission('Users') && (

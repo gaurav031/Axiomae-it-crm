@@ -4,7 +4,7 @@ import { Plus, Settings } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 
-const AVAILABLE_PERMISSIONS = ['Leads', 'Pipeline', 'Calls', 'WhatsApp', 'Email', 'Analytics'];
+const AVAILABLE_PERMISSIONS = ['Leads', 'Pipeline', 'Calls', 'WhatsApp', 'Email', 'Analytics', 'Customers', 'Documents'];
 
 const UserManagement = () => {
   const [users, setUsers] = useState<any[]>([]);

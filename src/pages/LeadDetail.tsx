@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import { Phone, Mail, MapPin, Building, Globe, Tag, Calendar, Clock, ArrowLeft, MessageSquare, Plus, Activity } from 'lucide-react';
@@ -9,8 +9,10 @@ import { useAuth } from '../contexts/AuthContext';
 const LeadDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [lead, setLead] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [convertingToClient, setConvertingToClient] = useState(false);
   
   // Modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -65,6 +67,20 @@ const LeadDetail = () => {
       } catch (err: any) {
         toast.error('Failed to delete lead');
       }
+    }
+  };
+
+  const handleConvertToClient = async () => {
+    if (!confirm('Convert this lead to a client? The lead status will be updated to WON.')) return;
+    try {
+      setConvertingToClient(true);
+      const res = await api.post(`/clients/from-lead/${id}`);
+      toast.success('Lead converted to client!');
+      navigate(`/clients/${res.data.client._id}`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to convert to client');
+    } finally {
+      setConvertingToClient(false);
     }
   };
 
@@ -125,6 +141,21 @@ const LeadDetail = () => {
           {lead.status}
         </span>
         <div className="ml-auto flex space-x-2">
+            {lead.status === 'WON' && (
+              <button
+                onClick={handleConvertToClient}
+                disabled={convertingToClient}
+                className="px-3 py-1.5 text-sm bg-emerald-600 text-white border border-emerald-600 rounded hover:bg-emerald-700 transition-colors font-medium disabled:opacity-60"
+              >
+                {convertingToClient ? 'Converting...' : '🏢 Convert to Client'}
+              </button>
+            )}
+            <button
+              onClick={() => navigate(`/documents?leadId=${id}&leadName=${encodeURIComponent(lead.fullName)}`)}
+              className="px-3 py-1.5 text-sm bg-violet-600 text-white border border-violet-600 rounded hover:bg-violet-700 transition-colors font-medium"
+            >
+              📄 Generate Doc
+            </button>
             <button 
                 onClick={() => { setEditForm({
                     fullName: lead.fullName, company: lead.company, email: lead.email,

@@ -1,38 +1,43 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
 import logoFull from '../assets/Logo_full.png';
 
-const Login = () => {
-  const [email, setEmail] = useState('');
+const SetPassword = () => {
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { setUser } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const from = (location.state as any)?.from?.pathname || '/';
+  const { user, setUser } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const res = await axios.post('/api/auth/login', { email, password });
-      setUser(res.data.user);
+      await axios.post('/api/auth/change-password', { newPassword: password });
       
-      if (res.data.user.mustChangePassword) {
-        toast.success('Login successful. Please set a new password.');
-        navigate('/set-password', { replace: true });
-        return;
+      // Update user state so they aren't stuck on set-password
+      if (user) {
+        setUser({ ...user, mustChangePassword: false });
       }
-
-      toast.success('Logged in successfully!');
-      navigate(from, { replace: true });
+      
+      toast.success('Password set successfully!');
+      navigate('/');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Login failed');
+      toast.error(err.response?.data?.message || 'Failed to set password');
     } finally {
       setIsLoading(false);
     }
@@ -44,55 +49,35 @@ const Login = () => {
         <div className="flex flex-col items-center">
           <img src={logoFull} alt="Axiomae IT Logo" className="h-20 w-auto mb-6 object-contain drop-shadow-sm" />
           <h2 className="text-center text-3xl font-extrabold text-gray-900 tracking-tight">
-            Welcome back
+            Set New Password
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to continue to Axiomae IT CRM
+            Please choose a new password for your account
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email address</label>
-              <input
-                type="email"
-                required
-                className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 sm:text-sm shadow-sm"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
               <input
                 type="password"
                 required
                 className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 sm:text-sm shadow-sm"
-                placeholder="Enter your password"
+                placeholder="Enter new password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
               <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer transition-colors"
+                type="password"
+                required
+                className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 sm:text-sm shadow-sm"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 cursor-pointer">
-                Remember me
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <Link to="/forgot-password" className="font-semibold text-primary hover:text-primary/80 transition-colors">
-                Forgot password?
-              </Link>
             </div>
           </div>
 
@@ -108,10 +93,10 @@ const Login = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Signing in...
+                  Saving...
                 </span>
               ) : (
-                'Sign in'
+                'Set Password'
               )}
             </button>
           </div>
@@ -121,4 +106,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SetPassword;
