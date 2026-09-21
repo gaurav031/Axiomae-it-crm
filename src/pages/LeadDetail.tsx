@@ -23,6 +23,7 @@ const LeadDetail = () => {
   const [editForm, setEditForm] = useState<any>({});
   const [followUpForm, setFollowUpForm] = useState({ date: '', time: '', type: 'Call', priority: 'Medium', notes: '' });
   const [noteContent, setNoteContent] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
 
   // This would typically fetch activities/timeline from a separate endpoint, 
   // but for now we'll just mock it or skip it if the API doesn't support it yet.
@@ -40,7 +41,19 @@ const LeadDetail = () => {
       }
     };
     fetchLead();
-  }, [id]);
+    
+    if (user?.role === 'Super Admin') {
+      const fetchUsers = async () => {
+        try {
+          const res = await api.get('/users');
+          setUsers(res.data);
+        } catch (err) {
+          console.error('Failed to fetch users');
+        }
+      };
+      fetchUsers();
+    }
+  }, [id, user]);
 
   const handleEditSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +173,8 @@ const LeadDetail = () => {
                 onClick={() => { setEditForm({
                     fullName: lead.fullName, company: lead.company, email: lead.email,
                     phoneNumber: lead.phoneNumber, priority: lead.priority, status: lead.status,
-                    source: lead.source, tags: lead.tags?.join(', ') || ''
+                    source: lead.source, tags: lead.tags?.join(', ') || '',
+                    assignedTo: lead.assignedTo?._id || ''
                 }); setIsEditModalOpen(true); }}
                 className="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
             >
@@ -344,6 +358,17 @@ const LeadDetail = () => {
                   <input type="text" value={editForm.tags || ''} onChange={e => setEditForm({...editForm, tags: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2 focus:ring-primary outline-none" placeholder="e.g. vip, referral" />
                 </div>
               </div>
+              {user?.role === 'Super Admin' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Assigned To</label>
+                  <select value={editForm.assignedTo || ''} onChange={e => setEditForm({...editForm, assignedTo: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2 outline-none">
+                    <option value="">Unassigned</option>
+                    {users.map((u: any) => (
+                      <option key={u._id} value={u._id}>{u.name} ({u.email})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100 mt-6">
                 <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50">Cancel</button>
                 <button type="submit" className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90">Save Changes</button>

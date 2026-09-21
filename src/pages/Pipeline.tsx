@@ -59,10 +59,14 @@ const Pipeline = () => {
   const [selectedImportLeads, setSelectedImportLeads] = useState<Set<string>>(new Set());
   const [totalNewLeads, setTotalNewLeads] = useState(0);
 
+  const [users, setUsers] = useState<any[]>([]);
+  const [userFilter, setUserFilter] = useState('');
+
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/leads');
+      const query = userFilter ? `?assignedTo=${userFilter}` : '';
+      const res = await api.get(`/leads${query}`);
       const leads: Lead[] = res.data;
       setTotalNewLeads(leads.filter(l => l.status === 'NEW').length);
 
@@ -80,7 +84,21 @@ const Pipeline = () => {
 
   useEffect(() => {
     fetchLeads();
-  }, []);
+  }, [userFilter]);
+
+  useEffect(() => {
+    if (user?.role === 'Super Admin') {
+      const fetchUsers = async () => {
+        try {
+          const res = await api.get('/users');
+          setUsers(res.data);
+        } catch (err) {
+          console.error("Failed to fetch users");
+        }
+      };
+      fetchUsers();
+    }
+  }, [user]);
 
   // Fetch importable NEW leads when modal opens or batch changes
   const openImportModal = async () => {
@@ -252,13 +270,27 @@ const Pipeline = () => {
             {totalNewLeads > 0 && <span className="text-blue-600 font-medium">{totalNewLeads} new lead{totalNewLeads !== 1 ? 's' : ''} available to import</span>}
           </p>
         </div>
-        <button
-          onClick={openImportModal}
-          className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 shadow-sm font-medium text-sm transition-all"
-        >
-          <Download className="w-4 h-4" />
-          Import Leads to Pipeline
-        </button>
+        <div className="flex items-center gap-3">
+          {user?.role === 'Super Admin' && (
+            <select
+              value={userFilter}
+              onChange={(e) => setUserFilter(e.target.value)}
+              className="border border-gray-300 bg-white text-gray-700 px-3 py-2 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            >
+              <option value="">All Users</option>
+              {users.map(u => (
+                <option key={u._id} value={u._id}>{u.name}</option>
+              ))}
+            </select>
+          )}
+          <button
+            onClick={openImportModal}
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 shadow-sm font-medium text-sm transition-all"
+          >
+            <Download className="w-4 h-4" />
+            Import Leads to Pipeline
+          </button>
+        </div>
       </div>
 
       {/* Pipeline Board */}

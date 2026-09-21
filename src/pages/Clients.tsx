@@ -33,9 +33,12 @@ const Clients = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [userFilter, setUserFilter] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [form, setForm] = useState({ companyName: '', contactPerson: '', email: '', phone: '', industry: '', city: '', state: '' });
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const fetchClients = async () => {
     try {
@@ -43,6 +46,7 @@ const Clients = () => {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
       if (statusFilter) params.set('status', statusFilter);
+      if (userFilter) params.set('assignedTo', userFilter);
       const res = await api.get(`/clients?${params}`);
       setClients(res.data);
     } catch {
@@ -52,7 +56,21 @@ const Clients = () => {
     }
   };
 
-  useEffect(() => { fetchClients(); }, [search, statusFilter]);
+  useEffect(() => { fetchClients(); }, [search, statusFilter, userFilter]);
+
+  useEffect(() => {
+    if (user?.role === 'Super Admin') {
+      const fetchUsers = async () => {
+        try {
+          const res = await api.get('/users');
+          setUsers(res.data);
+        } catch (err) {
+          console.error("Failed to fetch users");
+        }
+      };
+      fetchUsers();
+    }
+  }, [user]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +124,18 @@ const Clients = () => {
           <input type="text" placeholder="Search clients..." value={search} onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
         </div>
+        {user?.role === 'Super Admin' && (
+          <select
+            value={userFilter}
+            onChange={(e) => setUserFilter(e.target.value)}
+            className="border border-gray-200 bg-white text-gray-700 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          >
+            <option value="">All Users</option>
+            {users.map(u => (
+              <option key={u._id} value={u._id}>{u.name}</option>
+            ))}
+          </select>
+        )}
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
           <option value="">All Status</option>

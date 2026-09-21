@@ -21,6 +21,7 @@ import Clients from './pages/Clients';
 import ClientDetail from './pages/ClientDetail';
 import Documents from './pages/Documents';
 import Reports from './pages/Reports';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -74,6 +75,9 @@ function App() {
 
               {/* Reports */}
               <Route path="/reports" element={<Reports />} />
+
+              {/* Profile */}
+              <Route path="/profile" element={<Profile />} />
             </Route>
           </Route>
         </Routes>

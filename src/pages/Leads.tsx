@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, Filter, Plus, Upload, MoreHorizontal, Download } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Lead {
   _id: string;
@@ -18,10 +19,13 @@ interface Lead {
 }
 
 const Leads = () => {
+  const { user } = useAuth();
+  const [users, setUsers] = useState<any[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [userFilter, setUserFilter] = useState('');
   
   // Modal state for adding a lead
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,6 +41,7 @@ const Leads = () => {
       const query = new URLSearchParams();
       if (search) query.append('search', search);
       if (statusFilter) query.append('status', statusFilter);
+      if (userFilter) query.append('assignedTo', userFilter);
       
       const res = await api.get(`/leads?${query.toString()}`);
       setLeads(res.data);
@@ -53,7 +58,21 @@ const Leads = () => {
       fetchLeads();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [search, statusFilter]);
+  }, [search, statusFilter, userFilter]);
+
+  useEffect(() => {
+    if (user?.role === 'Super Admin') {
+      const fetchUsers = async () => {
+        try {
+          const res = await api.get('/users');
+          setUsers(res.data);
+        } catch (err) {
+          console.error("Failed to fetch users");
+        }
+      };
+      fetchUsers();
+    }
+  }, [user]);
 
   const handleSelectAll = () => {
     if (isAllSelected) {
@@ -85,6 +104,19 @@ const Leads = () => {
       } catch (err) {
         toast.error('Failed to delete leads');
       }
+    }
+  };
+
+  const handleBulkAssign = async (assignedToId: string) => {
+    if (!assignedToId || selectedLeads.length === 0) return;
+    try {
+      await api.post('/leads/bulk-assign', { leadIds: selectedLeads, assignedTo: assignedToId });
+      toast.success('Leads assigned successfully');
+      setSelectedLeads([]);
+      setIsAllSelected(false);
+      fetchLeads();
+    } catch (err) {
+      toast.error('Failed to assign leads');
     }
   };
 
@@ -156,6 +188,20 @@ const Leads = () => {
             
             <div className="flex items-center space-x-2">
               <Filter className="w-4 h-4 text-gray-400" />
+              
+              {user?.role === 'Super Admin' && (
+                <select
+                  value={userFilter}
+                  onChange={(e) => setUserFilter(e.target.value)}
+                  className="border border-gray-300 bg-white text-gray-700 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                >
+                  <option value="">All Users</option>
+                  {users.map(u => (
+                    <option key={u._id} value={u._id}>{u.name}</option>
+                  ))}
+                </select>
+              )}
+
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -176,6 +222,23 @@ const Leads = () => {
           {selectedLeads.length > 0 && (
             <div className="flex items-center space-x-3">
               <span className="text-sm text-gray-600">{selectedLeads.length} selected</span>
+              
+              {user?.role === 'Super Admin' && (
+                <select
+                  onChange={(e) => {
+                    if (e.target.value) handleBulkAssign(e.target.value);
+                    e.target.value = ""; // Reset after selection
+                  }}
+                  className="text-sm border border-gray-300 bg-white text-gray-700 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  defaultValue=""
+                >
+                  <option value="" disabled>Assign To...</option>
+                  {users.map(u => (
+                    <option key={u._id} value={u._id}>{u.name}</option>
+                  ))}
+                </select>
+              )}
+
               <button onClick={handleBulkDelete} className="text-sm px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 transition-colors">
                 Delete Selected
               </button>

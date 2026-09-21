@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Phone, Calendar, Clock, Plus, Search, Filter, X } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Lead {
   _id: string;
@@ -16,6 +17,9 @@ const Calls = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [userFilter, setUserFilter] = useState('');
+  const { user } = useAuth();
   
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -24,8 +28,9 @@ const Calls = () => {
   const fetchContactedLeads = async () => {
     try {
       setLoading(true);
-      // Fetch all leads for now, filter locally or could use query params
-      const res = await api.get('/leads');
+      // Fetch leads, filtered by user if selected
+      const query = userFilter ? `?assignedTo=${userFilter}` : '';
+      const res = await api.get(`/leads${query}`);
       const filtered = res.data.filter((l: Lead) => 
         ['CONTACTED', 'RECEIVED / CONNECTED', 'NOT PICKED UP'].includes(l.status)
       );
@@ -39,7 +44,21 @@ const Calls = () => {
 
   useEffect(() => {
     fetchContactedLeads();
-  }, []);
+  }, [userFilter]);
+
+  useEffect(() => {
+    if (user?.role === 'Super Admin') {
+      const fetchUsers = async () => {
+        try {
+          const res = await api.get('/users');
+          setUsers(res.data);
+        } catch (err) {
+          console.error("Failed to fetch users");
+        }
+      };
+      fetchUsers();
+    }
+  }, [user]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -136,8 +155,21 @@ const Calls = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
           <h2 className="text-lg font-medium text-gray-900">Contacted Leads</h2>
-          <div className="relative w-64">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+          <div className="flex items-center gap-3">
+            {user?.role === 'Super Admin' && (
+              <select
+                value={userFilter}
+                onChange={(e) => setUserFilter(e.target.value)}
+                className="border border-gray-300 bg-white text-gray-700 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="">All Users</option>
+                {users.map(u => (
+                  <option key={u._id} value={u._id}>{u.name}</option>
+                ))}
+              </select>
+            )}
+            <div className="relative w-64">
+              <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
             <input 
               type="text" 
               placeholder="Search..." 
@@ -145,6 +177,7 @@ const Calls = () => {
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
             />
+            </div>
           </div>
         </div>
         

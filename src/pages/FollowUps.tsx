@@ -3,6 +3,7 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 import { Calendar, Clock, CheckCircle, Phone, Mail, MessageSquare, User } from 'lucide-react';
 import { format } from 'date-fns';
+import { useAuth } from '../contexts/AuthContext';
 
 interface FollowUp {
   _id: string;
@@ -27,11 +28,15 @@ const FollowUps = () => {
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('today'); // today, tomorrow, thisWeek, upcoming, overdue, completed
+  const [users, setUsers] = useState<any[]>([]);
+  const [userFilter, setUserFilter] = useState('');
+  const { user } = useAuth();
 
   const fetchFollowUps = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/follow-ups?filter=${filter}`);
+      const query = userFilter ? `&assignedTo=${userFilter}` : '';
+      const res = await api.get(`/follow-ups?filter=${filter}${query}`);
       setFollowUps(res.data);
     } catch (err) {
       toast.error('Failed to load follow-ups');
@@ -42,7 +47,21 @@ const FollowUps = () => {
 
   useEffect(() => {
     fetchFollowUps();
-  }, [filter]);
+  }, [filter, userFilter]);
+
+  useEffect(() => {
+    if (user?.role === 'Super Admin') {
+      const fetchUsers = async () => {
+        try {
+          const res = await api.get('/users');
+          setUsers(res.data);
+        } catch (err) {
+          console.error("Failed to fetch users");
+        }
+      };
+      fetchUsers();
+    }
+  }, [user]);
 
   const handleComplete = async (id: string) => {
     try {
@@ -81,20 +100,34 @@ const FollowUps = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex space-x-2 overflow-x-auto pb-2 custom-scrollbar">
-        {['today', 'tomorrow', 'thisWeek', 'upcoming', 'overdue', 'completed'].map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
-              filter === f 
-                ? 'bg-primary text-primary-foreground shadow-sm' 
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
+      <div className="flex items-center space-x-4 mb-4">
+        {user?.role === 'Super Admin' && (
+          <select
+            value={userFilter}
+            onChange={(e) => setUserFilter(e.target.value)}
+            className="border border-gray-200 bg-white text-gray-700 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           >
-            {f.charAt(0).toUpperCase() + f.slice(1).replace(/([A-Z])/g, ' $1')}
-          </button>
-        ))}
+            <option value="">All Users</option>
+            {users.map(u => (
+              <option key={u._id} value={u._id}>{u.name}</option>
+            ))}
+          </select>
+        )}
+        <div className="flex space-x-2 overflow-x-auto pb-2 custom-scrollbar">
+          {['today', 'tomorrow', 'thisWeek', 'upcoming', 'overdue', 'completed'].map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+                filter === f 
+                  ? 'bg-primary text-primary-foreground shadow-sm' 
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {f.charAt(0).toUpperCase() + f.slice(1).replace(/([A-Z])/g, ' $1')}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

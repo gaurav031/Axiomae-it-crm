@@ -144,33 +144,47 @@ const UserManagement = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="bg-white p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
             <h2 className="text-xl font-bold mb-4">{isEditing ? 'Edit User' : 'Create User'}</h2>
             <form onSubmit={handleSave} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <input required type="text" value={currentUser.name || ''} onChange={e => setCurrentUser({...currentUser, name: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2" />
-              </div>
-              {!isEditing && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Email (Used for login)</label>
-                  <input required type="email" value={currentUser.email || ''} onChange={e => setCurrentUser({...currentUser, email: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2" />
+                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <input required type="text" value={currentUser.name || ''} onChange={e => setCurrentUser({...currentUser, name: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2" />
                 </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Role</label>
-                <select value={currentUser.role} onChange={e => setCurrentUser({...currentUser, role: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2">
-                  <option>Super Admin</option>
-                  <option>Admin</option>
-                  <option>Staff</option>
-                  <option>Custom User</option>
-                </select>
+                {!isEditing ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Email (Used for login)</label>
+                    <input required type="email" value={currentUser.email || ''} onChange={e => setCurrentUser({...currentUser, email: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2" />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <input disabled type="email" value={currentUser.email || ''} className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-gray-50 text-gray-500" />
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Role</label>
+                  <select value={currentUser.role} onChange={e => setCurrentUser({...currentUser, role: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2">
+                    <option>Super Admin</option>
+                    <option>Admin</option>
+                    <option>Staff</option>
+                    <option>Custom User</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <select value={currentUser.status} onChange={e => setCurrentUser({...currentUser, status: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
               </div>
               
               {currentUser.role !== 'Super Admin' && (
                 <div className="border border-gray-200 p-3 rounded-md">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Page Permissions</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {AVAILABLE_PERMISSIONS.map(perm => (
                       <label key={perm} className="flex items-center space-x-2 text-sm">
                         <input 
@@ -186,13 +200,33 @@ const UserManagement = () => {
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Status</label>
-                <select value={currentUser.status} onChange={e => setCurrentUser({...currentUser, status: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2">
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
+              {isEditing && (
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-3">Profile Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700">Bio</label>
+                      <textarea value={currentUser.bio || ''} onChange={e => setCurrentUser({...currentUser, bio: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2" rows={3}></textarea>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">LinkedIn</label>
+                      <input type="url" value={currentUser.linkedin || ''} onChange={e => setCurrentUser({...currentUser, linkedin: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">GitHub</label>
+                      <input type="url" value={currentUser.github || ''} onChange={e => setCurrentUser({...currentUser, github: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">LeetCode</label>
+                      <input type="url" value={currentUser.leetcode || ''} onChange={e => setCurrentUser({...currentUser, leetcode: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Skills</label>
+                      <input type="text" value={currentUser.skills || ''} onChange={e => setCurrentUser({...currentUser, skills: e.target.value})} className="mt-1 w-full border border-gray-300 rounded-md p-2" placeholder="e.g. React, Node.js" />
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</button>
