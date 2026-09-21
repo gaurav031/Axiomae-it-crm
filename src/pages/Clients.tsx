@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import { Plus, Search, Building2, Phone, Mail, Globe, User, ChevronRight, Tag } from 'lucide-react';
-
+import { useAuth } from '../contexts/AuthContext';
 interface Client {
   _id: string;
   clientId: string;
