@@ -15,6 +15,7 @@ interface Lead {
   nextFollowUp?: string;
   phoneNumber?: string;
   email?: string;
+  assignedTo?: any;
 }
 
 interface Column {
@@ -215,7 +216,7 @@ const Pipeline = () => {
         if (!noteContent) return;
         await api.post('/follow-ups', {
           leadId: actionModalLead.lead._id,
-          assignedTo: user?._id,
+          assignedTo: actionModalLead.lead.assignedTo?._id || actionModalLead.lead.assignedTo || user?._id || user?.id,
           date: new Date().toISOString().split('T')[0],
           time: new Date().toTimeString().slice(0, 5),
           type: 'Other',
@@ -226,7 +227,7 @@ const Pipeline = () => {
         toast.success('Note added successfully');
       } else {
         if (!followUpForm.date || !followUpForm.time) return;
-        await api.post('/follow-ups', { ...followUpForm, leadId: actionModalLead.lead._id, assignedTo: user?._id });
+        await api.post('/follow-ups', { ...followUpForm, leadId: actionModalLead.lead._id, assignedTo: actionModalLead.lead.assignedTo?._id || actionModalLead.lead.assignedTo || user?._id || user?.id });
         const nextFollowUpStr = `${followUpForm.date} ${followUpForm.time}`;
         await api.put(`/leads/${actionModalLead.lead._id}`, { nextFollowUp: nextFollowUpStr });
         setColumns(prevColumns =>
